@@ -32,7 +32,8 @@ def export_health_checks():
 
 def import_zone(zone_name):
 	def add_record_changes(action, records):
-		for key in records:
+		for key in sorted(records, key=lambda r: \
+				("alias_hosted_zone_id" in records[r] and "1" + r) or "0" + r):
 			record = records[key]
 			if record["type"] in ["NS", "SOA"]:
 				continue
@@ -49,6 +50,9 @@ def import_zone(zone_name):
 	records = zone_records["records"]
 
 	zone = conn.get_zone(zone_name)
+	if zone.id != zone_records["zone"]["id"]:
+		print "zone ID mismatch between AWS and json, exiting"
+		sys.exit(1)
 
 	old_records = get_records(zone)
 	delete_keys = set(old_records.keys()) - set(records.keys()) 
@@ -56,6 +60,7 @@ def import_zone(zone_name):
 	changes = boto.route53.record.ResourceRecordSets(conn, zone.id)
 	add_record_changes("DELETE", { key: old_records[key] for key in delete_keys })
 	add_record_changes("UPSERT", records)
+	pprint.pprint(changes)
 
 	#print(changes.to_xml())
 	result = changes.commit()
