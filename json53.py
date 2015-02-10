@@ -18,7 +18,7 @@ def export_zone(zone):
 	records = get_records(zone)
 
 	with open(zone.name + "json", "w") as f:
-		json.dump(records, f, indent=INDENT_LEVEL)
+		json.dump({"zone": { "id": zone.id, "name": zone.name}, "records": records}, f, indent=INDENT_LEVEL)
 
 def export_zones():
 	zones = conn.get_zones()
@@ -44,8 +44,9 @@ def import_zone(zone_name):
 			for value in change_records:
 				change.add_value(value)
 
-	with open(zone_name + "json", "r") as f:
-		records = json.load(f)
+	with open(zone_name + ".json", "r") as f:
+		zone_records = json.load(f)
+	records = zone_records["records"]
 
 	zone = conn.get_zone(zone_name)
 
